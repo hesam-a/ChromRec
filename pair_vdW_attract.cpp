@@ -15,6 +15,7 @@
  
 #include "pair_vdw_attract.h"
 
+#include <utils.h>
 #include "atom.h"
 #include "comm.h"
 #include "error.h"
@@ -25,6 +26,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <iostream>
 
 using namespace LAMMPS_NS;
 
@@ -49,7 +51,6 @@ PairVDWAttract::~PairVDWAttract()
     memory->destroy(R);
     memory->destroy(amp);
     memory->destroy(std_dev);
-    memory->destroy(torque);
   }
 }
 
@@ -59,7 +60,6 @@ void PairVDWAttract::compute(int eflag, int vflag) {
   int ii, i, j, jj, inum, jnum, itype, jtype;
   double xtmp, ytmp, ztmp, delx, dely, delz, evdwl, fpair;
   double rsq, r, delta_r,std_dev2, vdW, factor_lj;
-  double torque_i[3], torque_j[3];
   int *ilist, *jlist, *numneigh, **firstneigh;
 
   evdwl = 0.0;
@@ -71,13 +71,6 @@ void PairVDWAttract::compute(int eflag, int vflag) {
   int nlocal = atom->nlocal;
   double *special_lj = force->special_lj;
   int newton_pair = force->newton_pair;
-
-  // zero out the torque vectors since we're adding them here and LAMMPS is not aware of it
-  for (int i = 0; i < nlocal; ++i) {
-    torque[i][0] = 0.0;
-    torque[i][1] = 0.0;
-    torque[i][2] = 0.0;
-  }
 
   inum = list->inum;
   ilist = list->ilist;
@@ -109,41 +102,23 @@ void PairVDWAttract::compute(int eflag, int vflag) {
 
       if (rsq < cutsq[itype][jtype]) {
         delta_r  = r - R[itype][jtype];
+
 	std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
-        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/ 2 * std_dev2 );
-	fpair = (-delta_r/std_dev2) * vdW;
+        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/(2 * std_dev2) );
+	fpair = (delta_r/std_dev2) * vdW;
 
         // Apply the special scaling factor to the forces
-        fpair *= factor_lj;
+        fpair *= factor_lj / r;
 
-        f[i][0] += fpair * delx / r;
-        f[i][1] += fpair * dely / r;
-        f[i][2] += fpair * delz / r;
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= fpair * delx / r;
-          f[j][1] -= fpair * dely / r;
-          f[j][2] -= fpair * delz / r;
-        }
-	// Calculate torque
-        torque_i[0] = dely * f[i][2] - delz * f[i][1];
-        torque_i[1] = delz * f[i][0] - delx * f[i][2];
-        torque_i[2] = delx * f[i][1] - dely * f[i][0];
-
-        torque_j[0] = dely * f[j][2] - delz * f[j][1];
-        torque_j[1] = delz * f[j][0] - delx * f[j][2];
-        torque_j[2] = delx * f[j][1] - dely * f[j][0];
-
-        // Update the torque array
-        torque[i][0] += torque_i[0];
-        torque[i][1] += torque_i[1];
-        torque[i][2] += torque_i[2];
+        f[i][0] += fpair * delx;
+        f[i][1] += fpair * dely;
+        f[i][2] += fpair * delz;
 
         if (newton_pair || j < nlocal) {
-          torque[j][0] -= torque_j[0];
-          torque[j][1] -= torque_j[1];
-          torque[j][2] -= torque_j[2];
+          f[j][0] -= fpair * delx;
+          f[j][1] -= fpair * dely;
+          f[j][2] -= fpair * delz;
         }
 
 	if (eflag) evdwl = factor_lj * vdW - offset[itype][jtype];
@@ -151,6 +126,7 @@ void PairVDWAttract::compute(int eflag, int vflag) {
       }
     }
   }
+  if (vflag_fdotr) virial_fdotr_compute();
 }
 
 /* ----------------------------------------------------------------------
@@ -172,7 +148,6 @@ void PairVDWAttract::allocate()
   memory->create(R, np1, np1, "pair:R");
   memory->create(amp, np1, np1, "pair:amp");
   memory->create(std_dev, np1, np1, "pair:std_dev");
-  memory->create(torque, np1, np1, "pair:torque");
 
 }
 
@@ -182,7 +157,7 @@ void PairVDWAttract::allocate()
 
 void PairVDWAttract::settings(int narg, char **arg)
 {
-  if (narg != 9) error->all(FLERR, "Pair style vdw/attract requires exactly one argument: global cutoff");
+  if (narg != 1) error->all(FLERR, "Pair style vdw/attract requires exactly one argument: global cutoff");
   cut_global = utils::numeric(FLERR, arg[0], false, lmp);
 
   // reset per-type pair cutoffs that have been explicitly set previously
@@ -226,6 +201,7 @@ void PairVDWAttract::coeff(int narg, char **arg)
       std_dev[i][j] = 0.5 * (std_dev_i + std_dev_j);  // Using arithmetic mean for mixing
       cut[i][j] = cut_one;
       setflag[i][j] = 1;
+//      printf("Setting coeff for %d %d, setflag: %d\n", i, j, setflag[i][j]); // Added print statement
       count++;
     }
   }
@@ -239,16 +215,17 @@ void PairVDWAttract::coeff(int narg, char **arg)
 
 double PairVDWAttract::init_one(int i, int j)
 {
+//  printf("Init_one for %d %d, setflag: %d\n", i, j, setflag[i][j]); // Added print statement
   if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
 
   // Compute the offset
-  offset[i][j] = -amp[i][j] * exp(-std_dev[i][j] * cut[i][j]);
+  offset[i][j]  = -amp[i][j] * exp(-std_dev[i][j] * cut[i][j]);
 
   // Symmetrize the potential parameter arrays
-  cut[j][i] = cut[i][j];
-  amp[j][i]   = amp[i][j];
-  std_dev[j][i]   = std_dev[i][j];
-  offset[j][i] = offset[i][j];
+  cut[j][i]     = cut[i][j];
+  amp[j][i]     = amp[i][j];
+  std_dev[j][i] = std_dev[i][j];
+  offset[j][i]  = offset[i][j];
 
 
   return cut[i][j];
@@ -384,4 +361,3 @@ void *PairVDWAttract::extract(const char *str, int &dim)
   if (strcmp(str, "R" )  == 0)  return (void *) R;
   return nullptr;
 }
-
