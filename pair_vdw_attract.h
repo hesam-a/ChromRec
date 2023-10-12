@@ -34,7 +34,7 @@ class PairVDWAttract : public Pair {
   void settings(int, char **) override;
   void coeff(int, char **) override;
   double init_one(int, int) override;
-  virtual void init_style();
+//  virtual void init_style() override;
 
   void write_restart(FILE *) override;
   void read_restart(FILE *) override;
@@ -46,9 +46,13 @@ class PairVDWAttract : public Pair {
   double single(int, int, int, int, double, double, double, double &) override;
   void *extract(const char *, int &) override;
 
+//  double** getTorque() {
+//    return torque;
+//  }
+
  protected:
   double cut_global;
-  double **R, **amp, **std_dev, **cut;
+  double **R, **amp, **std_dev, **cut; // **torque;
   double **offset;
 
   virtual void allocate();
