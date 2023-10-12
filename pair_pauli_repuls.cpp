@@ -47,9 +47,7 @@ PairPauliRepuls::~PairPauliRepuls()
     memory->destroy(cut);
     memory->destroy(offset);
     memory->destroy(R);
-    memory->destroy(amp);
     memory->destroy(decay_const);
-    memory->destroy(torque);    
   }
 }
 
@@ -59,7 +57,6 @@ void PairPauliRepuls::compute(int eflag, int vflag) {
   int ii, i, j, jj, inum, jnum, itype, jtype;
   double xtmp, ytmp, ztmp, delx, dely, delz, evdwl, fpair;
   double rsq, r, delta_r, pauli, factor_lj ;
-  double torque_i[3], torque_j[3];
   int *ilist, *jlist, *numneigh, **firstneigh;
 
   evdwl = 0.0;
@@ -71,13 +68,6 @@ void PairPauliRepuls::compute(int eflag, int vflag) {
   int nlocal = atom->nlocal;
   double *special_lj = force->special_lj;
   int newton_pair = force->newton_pair;
-
-  // zero out the torque vectors since we're adding them here and LAMMPS is not aware of it
-  for (int i = 0; i < nlocal; ++i) {
-    torque[i][0] = 0.0;
-    torque[i][1] = 0.0;
-    torque[i][2] = 0.0;
-  }
 
   inum = list->inum;
   ilist = list->ilist;
@@ -108,42 +98,22 @@ void PairPauliRepuls::compute(int eflag, int vflag) {
       r = sqrt(rsq);
 
       if (rsq < cutsq[itype][jtype]) {
-        delta_r = r - 0.8 * R[itype][jtype];
+        delta_r = r - 0.85 * R[itype][jtype];
 
-        pauli = amp[itype][jtype] * exp(-decay_const[itype][jtype] * delta_r);
-	fpair = -decay_const[itype][jtype] * pauli;
+        pauli = exp(-decay_const[itype][jtype] * delta_r);
+	fpair = decay_const[itype][jtype] * pauli;
 
         // Apply the special scaling factor to the forces
-        fpair *= factor_lj;
+        fpair *= factor_lj / r;
 
-        f[i][0] += fpair * delx / r;
-        f[i][1] += fpair * dely / r;
-        f[i][2] += fpair * delz / r;
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= fpair * delx / r;
-          f[j][1] -= fpair * dely / r;
-          f[j][2] -= fpair * delz / r;
-        }
-
-        // Calculate torque
-        torque_i[0] = dely * f[i][2] - delz * f[i][1];
-        torque_i[1] = delz * f[i][0] - delx * f[i][2];
-        torque_i[2] = delx * f[i][1] - dely * f[i][0];
-
-        torque_j[0] = dely * f[j][2] - delz * f[j][1];
-        torque_j[1] = delz * f[j][0] - delx * f[j][2];
-        torque_j[2] = delx * f[j][1] - dely * f[j][0];
-
-        // Update the torque array
-        torque[i][0] += torque_i[0];
-        torque[i][1] += torque_i[1];
-        torque[i][2] += torque_i[2];
+        f[i][0] += fpair * delx;
+        f[i][1] += fpair * dely;
+        f[i][2] += fpair * delz;
 
         if (newton_pair || j < nlocal) {
-          torque[j][0] -= torque_j[0];
-          torque[j][1] -= torque_j[1];
-          torque[j][2] -= torque_j[2];
+          f[j][0] -= fpair * delx;
+          f[j][1] -= fpair * dely;
+          f[j][2] -= fpair * delz;
         }
 	
 	if (eflag) evdwl = factor_lj * pauli - offset[itype][jtype];
@@ -151,6 +121,7 @@ void PairPauliRepuls::compute(int eflag, int vflag) {
       }
     }
   }
+  if (vflag_fdotr) virial_fdotr_compute();
 }
 
 /* ----------------------------------------------------------------------
@@ -170,9 +141,7 @@ void PairPauliRepuls::allocate()
   memory->create(cut, np1, np1, "pair:cut");
   memory->create(offset, np1, np1, "pair:offset");
   memory->create(R, np1, np1, "pair:R");
-  memory->create(amp, np1, np1, "pair:amp");
   memory->create(decay_const, np1, np1, "pair:decay_const");
-  memory->create(torque, np1, np1, "pair:torque");
 }
 
 /* ----------------------------------------------------------------------
@@ -181,7 +150,7 @@ void PairPauliRepuls::allocate()
 
 void PairPauliRepuls::settings(int narg, char **arg)
 {
-  if (narg != 9) error->all(FLERR, "Pair style pauli/repuls requires exactly one argument: global cutoff");
+  if (narg != 1) error->all(FLERR, "Pair style pauli/repuls requires exactly one argument: global cutoff");
   cut_global = utils::numeric(FLERR, arg[0], false, lmp);
 
   // reset per-type pair cutoffs that have been explicitly set previously
@@ -199,7 +168,7 @@ void PairPauliRepuls::settings(int narg, char **arg)
 
 void PairPauliRepuls::coeff(int narg, char **arg)
 {
-  if (narg != 9) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (narg != 7) error->all(FLERR, "Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
@@ -207,18 +176,15 @@ void PairPauliRepuls::coeff(int narg, char **arg)
   utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
 
   double R_i = utils::numeric(FLERR, arg[2], false, lmp);
-  double amp_i = utils::numeric(FLERR, arg[3], false, lmp);
-  double decay_const_i = utils::numeric(FLERR, arg[4], false, lmp);
-  double R_j = utils::numeric(FLERR, arg[5], false, lmp);
-  double amp_j = utils::numeric(FLERR, arg[6], false, lmp);
-  double decay_const_j = utils::numeric(FLERR, arg[7], false, lmp);
-  double cut_one = utils::numeric(FLERR, arg[8], false, lmp);
+  double decay_const_i = utils::numeric(FLERR, arg[3], false, lmp);
+  double R_j = utils::numeric(FLERR, arg[4], false, lmp);
+  double decay_const_j = utils::numeric(FLERR, arg[5], false, lmp);
+  double cut_one = utils::numeric(FLERR, arg[6], false, lmp);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo, i); j <= jhi; j++) {
       R[i][j] = 0.5 * (R_i + R_j);  // Using arithmetic mean for mixing
-      amp[i][j] = sqrt(amp_i * amp_j);    // Using geometric mean for mixing
       decay_const[i][j] = 0.5 * (decay_const_i + decay_const_j);  // Using arithmetic mean for mixing
       cut[i][j] = cut_one;
       setflag[i][j] = 1;
@@ -238,11 +204,10 @@ double PairPauliRepuls::init_one(int i, int j)
   if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
 
   // Compute the offset
-  offset[i][j] = amp[i][j] * exp(-decay_const[i][j] * cut[i][j]);
+  offset[i][j] = exp(-decay_const[i][j] * cut[i][j]);
 
   // Symmetrize the potential parameter arrays
-  cut[j][i] = cut[i][j];
-  amp[j][i]   = amp[i][j];
+  cut[j][i]    = cut[i][j];
   decay_const[j][i]   = decay_const[i][j];
   offset[j][i] = offset[i][j];
 
@@ -260,7 +225,7 @@ double PairPauliRepuls::single(int /*i*/, int /*j*/, int itype, int jtype, doubl
   r = sqrt(rsq);
   delta_r = r - R[itype][jtype]; 
 
-  pauli = amp[itype][jtype] * exp(-decay_const[itype][jtype] * delta_r);
+  pauli = exp(-decay_const[itype][jtype] * delta_r);
 
   fforce = factor_lj * -decay_const[itype][jtype] * pauli/r;
   return factor_lj * (pauli - offset[itype][jtype]);
@@ -281,7 +246,6 @@ void PairPauliRepuls::write_restart(FILE *fp)
       if (setflag[i][j]) {
         fwrite(&decay_const[i][j], sizeof(double), 1, fp);
         fwrite(&cut[i][j], sizeof(double), 1, fp);
-        fwrite(&amp[i][j], sizeof(double), 1, fp);
         fwrite(&R[i][j], sizeof(double), 1, fp);
       }
     }
@@ -319,12 +283,10 @@ void PairPauliRepuls::read_restart(FILE *fp)
         if (me == 0) {
           utils::sfread(FLERR, &decay_const[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &cut[i][j], sizeof(double), 1, fp, nullptr, error);
-          utils::sfread(FLERR, &amp[i][j], sizeof(double), 1, fp, nullptr, error);
           utils::sfread(FLERR, &R[i][j], sizeof(double), 1, fp, nullptr, error);
         }
         MPI_Bcast(&decay_const[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&cut[i][j], 1, MPI_DOUBLE, 0, world);
-        MPI_Bcast(&amp[i][j], 1, MPI_DOUBLE, 0, world);
         MPI_Bcast(&R[i][j], 1, MPI_DOUBLE, 0, world);
       }
     }
@@ -355,7 +317,7 @@ void PairPauliRepuls::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
-      fprintf(fp, "%d %d %g %g %g %g\n", i, j, decay_const[i][j], cut[i][i], amp[i][i], R[i][i]);
+      fprintf(fp, "%d %d %g %g %g\n", i, j, decay_const[i][j], cut[i][i], R[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -366,7 +328,7 @@ void PairPauliRepuls::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
-      fprintf(fp, "%d %d %g %g %g %g\n", i, j, decay_const[i][j], cut[i][j], amp[i][i], R[i][i]);
+      fprintf(fp, "%d %d %g %g %g\n", i, j, decay_const[i][j], cut[i][j], R[i][i]);
 }
 
 
@@ -376,7 +338,6 @@ void *PairPauliRepuls::extract(const char *str, int &dim)
 {
   dim =2;
   if (strcmp(str, "decay_const") == 0) return (void *) decay_const;
-  if (strcmp(str, "amp") == 0)  return (void *) amp;
   if (strcmp(str, "R" )  == 0)  return (void *) R;
   return nullptr;
 }
