@@ -46,13 +46,13 @@ class PairPauliRepuls : public Pair {
   double single(int, int, int, int, double, double, double, double &) override;
   void *extract(const char *, int &) override;
 
-  double** getTorque() {
-    return torque;
-  }
+//  double** getTorque() {
+//    return torque;
+//  }
 
  protected:
   double cut_global;
-  double **R, **amp, **decay_const, **cut, **torque;
+  double **R, **decay_const, **cut; // **amp, **torque;
   double **offset;
 
   virtual void allocate();
