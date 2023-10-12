@@ -23,6 +23,7 @@ PairStyle(lock/key,PairLockKey)
 
 #include <map>
 #include <vector>
+#include <unordered_map>
 #include "pair.h"
 
 #include "fix_rot_brownian.h"
@@ -34,7 +35,8 @@ enum TableState {
     NONE,
     PROTEIN,
     SITE,
-    INTERACTING_SITES
+    INTERACTING_SITES,
+    SITE_COORDS
 //    INTERACTING_PARTICLES
 };
 
@@ -57,6 +59,12 @@ struct InteractingSites {
     std::vector<double> lockKeyPrm;
 };
 
+// Define a struct to hold the coordinates
+struct Coords {
+    double x;
+    double y;
+    double z;
+};
 
 class PairLockKey : public Pair {
   public:
@@ -71,23 +79,29 @@ class PairLockKey : public Pair {
   void loadLookupTables(const std::string &);
 
   void write_restart(FILE *) override;
+  void write_restart_settings(FILE *);
   void read_restart(FILE *) override;
-  void write_restart_settings(FILE *) override;
-  void read_restart_settings(FILE *) override;
   void rotateVectorByQuaternion(const double *vec, const double *quat, double *result);
-
+  void readSiteCoords();
+  void updateSiteCoordsFile();
 
   double single(int, int, int, int, double, double, double, double &) override;
 
-  double** getTorque() {
-    return torque;
-  }
+//  double** getTorque() {
+//    return torque;
+//  }
 
   private:
 
   std::map<std::string, Protein> proteinTable;
   std::map<std::string, std::vector<Site>> siteTable;
   std::map<std::string, InteractingSites> interactingSitesTable;
+  std::unordered_map<std::string, Coords> siteCoordsMap; 
+
+  std::ofstream siteCoordsFile;  // File stream for writing site coordinates
+  bool isSiteCoordsFileOpen = false;  // Flag to check if the file is open
+  bool writeSiteCoords;
+
 //  std::map<std::string, InteractingParticles> interactingParticlesTable;
 
   FixRotBrownian *fixRotBrownian;  // Pointer to FixRotBrownian object
@@ -96,8 +110,7 @@ class PairLockKey : public Pair {
  protected:
 
   double cut_global;
-  double **cut, **torque;
-  double **offset;
+  double **cut; // **torque;
 
   virtual void allocate();
 };
