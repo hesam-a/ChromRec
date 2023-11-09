@@ -182,13 +182,13 @@ void PairVDWAttract::coeff(int narg, char **arg)
   utils::bounds(FLERR, arg[0], 1, atom->ntypes, ilo, ihi, error);
   utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
 
-  double R_i = utils::numeric(FLERR, arg[2], false, lmp);
-  double amp_i = utils::numeric(FLERR, arg[3], false, lmp);
+  double R_i       = utils::numeric(FLERR, arg[2], false, lmp);
+  double amp_i     = utils::numeric(FLERR, arg[3], false, lmp);
   double std_dev_i = utils::numeric(FLERR, arg[4], false, lmp);
-  double R_j = utils::numeric(FLERR, arg[5], false, lmp);
-  double amp_j = utils::numeric(FLERR, arg[6], false, lmp);
+  double R_j       = utils::numeric(FLERR, arg[5], false, lmp);
+  double amp_j     = utils::numeric(FLERR, arg[6], false, lmp);
   double std_dev_j = utils::numeric(FLERR, arg[7], false, lmp);
-  double cut_one = utils::numeric(FLERR, arg[8], false, lmp);
+  double cut_one   = utils::numeric(FLERR, arg[8], false, lmp);
 
  // Error checks for invalid parameter values
   if (std_dev_i <= 0 || std_dev_j <= 0) error->all(FLERR, "Standard deviation for vdw/attract must be positive");
@@ -219,7 +219,8 @@ double PairVDWAttract::init_one(int i, int j)
   if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
 
   // Compute the offset
-  offset[i][j]  = -amp[i][j] * exp(-std_dev[i][j] * cut[i][j]);
+ 
+  offset[i][j]  = -amp[i][j] * exp(-(cut[i][j] * cut[i][j])/(2 * std_dev[i][j] * std_dev[i][j]));
 
   // Symmetrize the potential parameter arrays
   cut[j][i]     = cut[i][j];
