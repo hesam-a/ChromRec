@@ -52,7 +52,7 @@ class PairPauliRepuls : public Pair {
 
  protected:
   double cut_global;
-  double **R, **decay_const, **cut; // **amp, **torque;
+  double **R, **amp, **decay_const, **cut; // **amp, **torque;
   double **offset;
 
   virtual void allocate();
