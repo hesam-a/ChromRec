@@ -60,7 +60,7 @@ int FixStochasticRotation::setmask() {
 std::pair<double, Eigen::Vector3d> FixStochasticRotation::calculateDominantInteractionVector(int particle_index, double **f, int num_bonded, int *bonded_atoms) {
 
   int j, site_idx;
-  double sum_force_mag = 0.0;
+  double max_force_mag = 0.0;
   double force_mag = 0.0;
   Eigen::Vector3d dominant_force_dir;
 
