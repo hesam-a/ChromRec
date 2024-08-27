@@ -59,7 +59,7 @@ PairVDWAttract::~PairVDWAttract()
 void PairVDWAttract::compute(int eflag, int vflag) {
   int ii, i, j, jj, inum, jnum, itype, jtype;
   double xtmp, ytmp, ztmp, delx, dely, delz, evdwl, fpair;
-  double rsq, r, delta_r,std_dev2, vdW, factor_lj;
+  double rsq, r, delta_r, std_dev2, vdW, factor_lj;
   int *ilist, *jlist, *numneigh, **firstneigh;
 
   evdwl = 0.0;
@@ -79,6 +79,7 @@ void PairVDWAttract::compute(int eflag, int vflag) {
 
   // Loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
+ 
     i = ilist[ii];
     xtmp = x[i][0];
     ytmp = x[i][1];
@@ -92,20 +93,20 @@ void PairVDWAttract::compute(int eflag, int vflag) {
       j &= NEIGHMASK;
       factor_lj = special_lj[sbmask(j)];
 
-
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
       rsq = delx*delx + dely*dely + delz*delz;
       jtype = type[j];
-      r = sqrt(rsq);
 
       if (rsq < cutsq[itype][jtype]) {
-        delta_r  = r - R[itype][jtype];
 
+        r = sqrt(rsq);
+        delta_r  = r - R[itype][jtype];
 	std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
-        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/(2 * std_dev2) );
+        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/(2 * std_dev2));
+
 	fpair = (delta_r/std_dev2) * vdW;
 
         // Apply the special scaling factor to the forces
@@ -196,7 +197,7 @@ void PairVDWAttract::coeff(int narg, char **arg)
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo, i); j <= jhi; j++) {
-      R[i][j] = 0.5 * (R_i + R_j);  // Using arithmetic mean for mixing
+      R[i][j] = (R_i + R_j);  // Using arithmetic mean for mixing
       amp[i][j] = sqrt(amp_i * amp_j);    // Using geometric mean for mixing
       std_dev[i][j] = 0.5 * (std_dev_i + std_dev_j);  // Using arithmetic mean for mixing
       cut[i][j] = cut_one;
@@ -219,9 +220,12 @@ double PairVDWAttract::init_one(int i, int j)
   if (setflag[i][j] == 0) error->all(FLERR, "All pair coeffs are not set");
 
   // Compute the offset
+  if (offset_flag) {
+    offset[i][j]  = -amp[i][j] * exp(-(cut[i][j] * cut[i][j])/(2 * std_dev[i][j] * std_dev[i][j]));
+  } else {
+    offset[i][j] = 0.0;
+  }  
  
-  offset[i][j]  = -amp[i][j] * exp(-(cut[i][j] * cut[i][j])/(2 * std_dev[i][j] * std_dev[i][j]));
-
   // Symmetrize the potential parameter arrays
   cut[j][i]     = cut[i][j];
   amp[j][i]     = amp[i][j];
@@ -237,14 +241,16 @@ double PairVDWAttract::init_one(int i, int j)
 double PairVDWAttract::single(int /*i*/, int /*j*/, int itype, int jtype, double rsq,
                              double /*factor_coul*/, double factor_lj, double &fforce)
 {
-  double r, delta_r, vdW;
+  double r, delta_r, vdW, std_dev2, fpair;
 
   r = sqrt(rsq);
-  delta_r = r - R[itype][jtype]; 
+  delta_r     = r - R[itype][jtype]; 
+  std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
-  vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/ 2 * std_dev[itype][jtype] * std_dev[itype][jtype] );
+  vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/ (2 * std_dev2 ));
+  fpair = (delta_r/std_dev2) * vdW;
 
-  fforce = factor_lj * (-delta_r/(std_dev[itype][jtype] * std_dev[itype][jtype])) * vdW/r;
+  fforce = factor_lj * fpair/r;
   return factor_lj * (vdW - offset[itype][jtype]);
 }
 
