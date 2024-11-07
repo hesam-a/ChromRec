@@ -1,0 +1,209 @@
+#interactions
+
+bond_style harmonic
+
+bond_coeff   1    0.2  10.     #  H3-H4,           10.    0.22  9.  
+bond_coeff   2    0.2  9.5     #  H2A-H2B          9.5    0.25  8.5 
+
+bond_coeff   3    0.2  36.5    #  H3-H3    A-E     36.5   0.2   35.5
+bond_coeff   4    0.2  37.6    #  H4-H4    B-F     37.6   0.23  35.6
+bond_coeff   5    0.2  41.8    #  H2A-H2A  C-G     41.8   0.23  40.8
+bond_coeff   6    0.2  35.9    #  H2B-H2B  D-H     35.9   0.22  34.9
+
+bond_coeff   7    0.2  32.6    #  H4-H2B           32.6   0.2   31.6
+
+bond_coeff   8    0.2  29.2    #  H3-H2A           29.2   0.2   28.2
+bond_coeff   9    0.2  39.0    #  H3-H2A           39.0   0.2   38.0
+
+bond_coeff   10   0.2  36.1   #  H3-H2B  
+bond_coeff   11   0.2  40.5   #  H3-H2B  
+
+bond_coeff   12   0.2  27.8   #  H4-H2A 
+bond_coeff   13   0.2  32.9   #  H4-H2A 
+
+#bond_coeff   1    0.15   10.3   #  H3 - H4, A-B, E-F
+#bond_coeff   2    0.15   9.75   #  H2A - H2B, C-D, G-H 
+#
+#bond_coeff   3    0.15   36.5   #  H3 - H3    A-E 
+#bond_coeff   4    0.15   37.6   #  H4 - H4    B-F  
+#bond_coeff   5    0.15   41.8   #  H2A - H2A  C-G  
+#bond_coeff   6    0.15   35.9   #  H2B - H2B  D-H  
+#
+#bond_coeff   7    0.15   32.6   #  H4 - H2B  B-D, B-H, F-D, F-H
+#
+#bond_coeff   8    0.15   29.2   #  H3 - H2A  A-G, E-C
+#bond_coeff   9    0.15   39.0   #  H3 - H2A  A-C, E-G
+#
+#
+#bond_coeff   10   0.2   36.1   #  H3-H2B  
+#bond_coeff   11   0.2   40.5   #  H3-H2B  
+#
+#bond_coeff   12   0.2   27.8   #  H4-H2A 
+#bond_coeff   13   0.2   32.9   #  H4-H2A 
+
+
+#bond_coeff   14   .4     50.0   #  DNA particles
+#bond_coeff   15   .2    34.1   #  DNA - H2A   10    3  
+#bond_coeff   16   .2    24.0   #  DNA - H2A   11    3  
+#bond_coeff   17   .2    27.2   #  DNA - H2B   12    4  
+#bond_coeff   18   .2    25.0   #  DNA - H4    13    2  
+#bond_coeff   19   .2    19.0   #  DNA - H3    14    1  
+#bond_coeff   20   .2    37.2   #  DNA - H3    15    1  
+#bond_coeff   21   .2    28.0   #  DNA - H3    15    5  
+#bond_coeff   22   .2    21.8   #  DNA - H4    16    6  
+#bond_coeff   23   .2    30.9   #  DNA - H4    17    6  
+#bond_coeff   24   .2    23.0   #  DNA - H2B   18    8  
+#bond_coeff   25   .2    25.4   #  DNA - H2A   19    7  
+#bond_coeff   26   .2    44.1   #  DNA - H2A   20    7  
+#bond_coeff   27   .2    39.6   #  DNA         9     15 
+#bond_coeff   28   .2    44.1   #  DNA         15    21 
+#bond_coeff   29   .2    43.9   #  DNA         10    15 
+#bond_coeff   30   .2    47.2   #  DNA         15    20 
+
+
+bond_coeff   14   .3    40.0   #  DNA particles
+bond_coeff   15   .1    30.2   #  DNA - H3    10    5
+bond_coeff   16   .1    34.1   #  DNA - H2A   10    3
+bond_coeff   17   .1    24.0   #  DNA - H2A   11    3
+bond_coeff   18   .1    38.5   #  DNA - H2B   11    6
+bond_coeff   19   .1    27.2   #  DNA - H2B   12    4
+bond_coeff   20   .1    38.1   #  DNA - H2B   12    8
+bond_coeff   21   .1    25.0   #  DNA - H4    13    2
+bond_coeff   22   .1    37.2   #  DNA - H2A   13    7
+bond_coeff   23   .1    19.0   #  DNA - H3    14    1
+bond_coeff   24   .1    45.0   #  DNA - H4    14    7
+bond_coeff   25   .1    37.2   #  DNA - H3    15    1
+bond_coeff   26   .1    28.0   #  DNA - H3    15    5
+bond_coeff   27   .1    42.6   #  DNA - H3    16    3
+bond_coeff   28   .1    21.8   #  DNA - H4    16    5
+bond_coeff   29   .1    30.9   #  DNA - H4    17    6
+bond_coeff   30   .1    37.0   #  DNA - H2B   17    4
+bond_coeff   31   .1    23.0   #  DNA - H2B   18    8
+bond_coeff   32   .1    40.0   #  DNA - H3    18    4
+bond_coeff   33   .1    35.7   #  DNA - H3    19    1
+bond_coeff   34   .1    25.4   #  DNA - H2A   19    7
+bond_coeff   35   .1    44.1   #  DNA - H2A   20    7
+bond_coeff   36   .1    34.3   #  DNA - H3    20    1
+bond_coeff   37   .07   39.6   #  DNA         9     15
+bond_coeff   38   .07   44.1   #  DNA         15    21
+bond_coeff   39   .07   43.9   #  DNA         10    15
+bond_coeff   40   .07   47.2   #  DNA         15    20
+bond_coeff   41   .008  33.9   #  H3 - tail    
+bond_coeff   42   .008  28.25  #  H4 - tail    
+bond_coeff   43   .2    5.5    #  H2A - ACPTCH1
+bond_coeff   44   .2    9.5    #  H2B - ACPTCH2
+
+
+angle_style harmonic
+#angle_coeff 1  5.36  180      # DNA particles
+angle_coeff 1   2.36  180      # DNA particles
+angle_coeff 2   1.    77.      # H2A - ACPTCH1 - H2B
+
+#angle_coeff 2  4.36  116.9    # DNA particles
+#angle_coeff 3  4.36  135.5    # DNA entry/exit
+
+special_bonds lj/coul 1. 1. 1.
+
+#pair_style hybrid/overlay gauss/elec 20
+pair_style hybrid/overlay pauli/repuls 40 gauss/elec 25 
+
+#   H3 - H4
+pair_coeff  1  2  pauli/repuls     0.7    17.35    30     .5      16.24    30     .5       30
+
+#   H3 - H2A                                                                             
+pair_coeff  1  3  pauli/repuls     0.0    17.35    30     .09     16.9     30     .09      40.
+
+#   H4 - H2A                                                                             
+pair_coeff  2  3  pauli/repuls     0.06   16.24    30     .09     16.9     30     .09      40.
+
+#   H4 - H2B                                                                             
+pair_coeff  2  4  pauli/repuls     0.0    16.24    30     .09     16.4     30     .09      40.
+
+#   H3 - H2B                                                                             
+pair_coeff  1  4  pauli/repuls     0.0    19.5     30     .09     19.5     30     .09      40.
+
+#   H2A - H2B                                                                            
+pair_coeff  3  4  pauli/repuls     0.72   16.89    30     .5      16.7     30     .5       30.
+
+#   H3 - H3
+pair_coeff  1  1  pauli/repuls     0.0    18.23    30     .03     18.23    30     .03      40.
+
+#   H4 - H4
+pair_coeff  2  2  pauli/repuls     0.0    18.62    30     .03     18.62    30     .03      40.
+
+#   H2A - H2A                         
+pair_coeff  3  3  pauli/repuls     0.0    20.9     30     .03     20.9     30     .03      45.
+
+#   H2B - H2B                         
+pair_coeff  4  4  pauli/repuls     0.0    17.9     30     .03     17.9     30     .03      40.
+
+
+# DNA - histones
+pair_coeff   1   5  pauli/repuls      0.     20     40     .05     20     40   .05    30.
+pair_coeff   2   5  pauli/repuls      0.     20     40     .05     20     40   .05    30.
+pair_coeff   3   5  pauli/repuls      0.     20     40     .05     20     40   .05    30.
+pair_coeff   4   5  pauli/repuls      0.     20     40     .05     20     40   .05    30.
+pair_coeff   5   5  pauli/repuls      0.     20     40     .05     20     40   .05    30.
+
+#   H3 tail - histones & DNA
+pair_coeff  6  1  pauli/repuls     0.     18.23    20     .05      10      20     .05      30.
+pair_coeff  6  2  pauli/repuls     0.     18.62    20     .05      10      20     .05      30.
+pair_coeff  6  3  pauli/repuls     0.     20.9     20     .05      10      20     .05      35.
+pair_coeff  6  4  pauli/repuls     0.     17.9     20     .05      10      20     .05      30.
+pair_coeff  6  5  pauli/repuls     0.     2        4      .1       2       4      .1        6.
+pair_coeff  6  6  pauli/repuls     0.     10       20     .05      10      20     .05      15.
+pair_coeff  6  5  gauss/elec      -10     5        6       5       20.
+
+#   H4 tail - histones & DNA
+pair_coeff  7  1  pauli/repuls     0.     18.23    20     .05      10      20     .05      30.
+pair_coeff  7  2  pauli/repuls     0.     18.62    20     .05      10      20     .05      30.
+pair_coeff  7  3  pauli/repuls     0.     20.9     20     .05      10      20     .05      35.
+pair_coeff  7  4  pauli/repuls     0.     17.9     20     .05      10      20     .05      30.
+pair_coeff  7  5  pauli/repuls     0.     10       20     .05      10      20     .05      25.
+pair_coeff  7  6  pauli/repuls     0.     10       20     .05      10      20     .05      15.
+pair_coeff  7  7  pauli/repuls     0.     10       20     .05      10      20     .05      15.
+pair_coeff  7  8  gauss/elec      -12     5        2       5       20.
+
+#   Acidic patch - histones & DNA
+pair_coeff  8  1  pauli/repuls     0.     10       20     .05      10      20     .05      20.
+pair_coeff  8  2  pauli/repuls     0.     10       20     .05      10      20     .05      20.
+pair_coeff  8  3  pauli/repuls     0.     3        20     .05      3       20     .05      8.
+pair_coeff  8  4  pauli/repuls     0.     5        20     .05      5       20     .05      10.
+pair_coeff  8  5  pauli/repuls     0.     10       20     .05      10      20     .05      25.
+pair_coeff  8  6  pauli/repuls     0.     10       20     .05      10      20     .05      15.
+pair_coeff  8  7  pauli/repuls     0.     2        4      .1       2       4      .1        6.
+pair_coeff  8  8  pauli/repuls     0.     10       20     .05      10      20     .05      15.
+
+#pair_coeff 1 6 none
+#pair_coeff 2 6 none
+#pair_coeff 3 6 none
+#pair_coeff 4 6 none
+#pair_coeff 6 6 none
+
+#pair_coeff 1 1 none
+#pair_coeff 1 2 none
+#pair_coeff 1 3 none
+#pair_coeff 1 4 none
+#pair_coeff 1 5 none
+#pair_coeff 2 2 none
+#pair_coeff 2 3 none
+#pair_coeff 2 4 none
+#pair_coeff 2 5 none
+#pair_coeff 3 3 none
+#pair_coeff 3 4 none
+#pair_coeff 3 5 none
+#pair_coeff 4 4 none
+#pair_coeff 4 5 none
+#pair_coeff 5 5 none
+
+#Radius of H3:  17.35 Å
+#Radius of H4:  16.24 Å
+#Radius of H2A: 16.89 Å
+#Radius of H2B: 16.70 Å
+#Radius of DNA: 14.36 Å
+
+#variable radiusType1 string "18.489"
+#variable radiusType2 string "17.054"
+
+#pair_style lepton 19.0
+#pair_coeff * * "-A*exp(-((r-r0)*(r-r0))/(2.0*sigma*sigma)); A=500; r0=7; sigma=3" 19
