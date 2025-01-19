@@ -1,18 +1,3 @@
-/* ----------------------------------------------------------------------
-   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   https://www.lammps.org/, Sandia National Laboratories
-   LAMMPS development team: developers@lammps.org
-
-   Copyright (2003) Sandia Corporation.  Under the terms of Contract
-   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
-   certain rights in this software.  This software is distributed under
-   the GNU General Public License.
-
-   See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
-
-// Contributing author: Hesam Arabzadeh, University of Missouri, hacr6@missouri.edu
- 
 #include "pair_pauli_repuls.h"
 
 #include "atom.h"
@@ -25,7 +10,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <iostream>
 
 using namespace LAMMPS_NS;
 
@@ -80,31 +64,24 @@ void PairPauliRepuls::compute(int eflag, int vflag) {
   // Loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
     i = ilist[ii];
-    xtmp = x[i][0];
-    ytmp = x[i][1];
-    ztmp = x[i][2];
     itype = type[i];
     jlist = firstneigh[i];
     jnum = numneigh[i];
+//    xtmp = x[i][0];
+//    ytmp = x[i][1];
+//    ztmp = x[i][2];
 
     for (jj = 0; jj < jnum; jj++) {
-      j = jlist[jj];
-      j &= NEIGHMASK;
+      j = jlist[jj] & NEIGHMASK;
       factor_lj = special_lj[sbmask(j)];
 
-
-      delx = xtmp - x[j][0];
-      dely = ytmp - x[j][1];
-      delz = ztmp - x[j][2];
+      delx = x[i][0] - x[j][0];
+      dely = x[i][1] - x[j][1];
+      delz = x[i][2] - x[j][2];
       rsq = delx*delx + dely*dely + delz*delz;
       jtype = type[j];
 
-
       if (rsq < cutsq[itype][jtype]) {
-        //std::cout << " PAULI : if loop was entered\n";
-        //std::cout << "\nInside Pauli/Repuls\n   Particle i: type " << itype << ", global index " << atom->tag[i]     
-        //        << ")      Particle j: type: " << jtype << ", global index " << atom->tag[j] << ")\n"; 
-
         r = sqrt(rsq);
 	over = overlap[itype][jtype] * R[itype][jtype];
         delta_r = r - over;
@@ -179,22 +156,22 @@ void PairPauliRepuls::settings(int narg, char **arg)
 
 void PairPauliRepuls::coeff(int narg, char **arg)
 {
-  if (narg < 9 || narg > 10) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (narg != 10) error->all(FLERR, "Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
   utils::bounds(FLERR, arg[0], 1, atom->ntypes, ilo, ihi, error);
   utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
 
-//  // Check if the 'none' keyword is used
-//  if (strcmp(arg[2], "none") == 0) {
-//    for (int i = ilo; i <= ihi; i++) {
-//      for (int j = MAX(jlo, i); j <= jhi; j++) {
-//        setflag[i][j] = 0; 
-//      }
-//    }
-//    return; // Exit the function
-//  }  
+  // Check if the 'none' keyword is used
+  if (strcmp(arg[2], "none") == 0) {
+    for (int i = ilo; i <= ihi; i++) {
+      for (int j = MAX(jlo, i); j <= jhi; j++) {
+        setflag[i][j] = 0; // Mark this pair as not set
+      }
+    }
+    return; // Exit the function
+  }  
 
   double overlap = utils::numeric(FLERR, arg[2], false, lmp);
   double R_i     = utils::numeric(FLERR, arg[3], false, lmp);
