@@ -93,20 +93,14 @@ void PairLockKey::compute(int eflag, int vflag) {
       j &= NEIGHMASK;
       factor_lj = special_lj[sbmask(j)];
 
+
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
       rsq = delx*delx + dely*dely + delz*delz;
       jtype = type[j];
 
-      std::cout << "\nInside LnK\n   Particle i: type " << itype << ", global index " << atom->tag[i]
-              << ")      Particle j: type: " << jtype << ", global index " << atom->tag[j] << ")\n";
-      
-      std::cout << "   cutsq: " << cutsq[itype][jtype] << "rsq: " << rsq << '\n';
-
       if (rsq < cutsq[itype][jtype]) {
-        std::cout << "    LnK: if loop was entered\n";
-  
         r = sqrt(rsq);
 	std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
@@ -179,7 +173,7 @@ void PairLockKey::settings(int narg, char **arg)
 
 void PairLockKey::coeff(int narg, char **arg)
 {
-  if (narg < 7 || narg > 8) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (narg != 7) error->all(FLERR, "Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
