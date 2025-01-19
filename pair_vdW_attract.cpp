@@ -93,6 +93,7 @@ void PairVDWAttract::compute(int eflag, int vflag) {
       j &= NEIGHMASK;
       factor_lj = special_lj[sbmask(j)];
 
+
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
@@ -105,7 +106,7 @@ void PairVDWAttract::compute(int eflag, int vflag) {
         delta_r  = r - R[itype][jtype];
 	std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
-        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/(2 * std_dev2));
+        vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/(2 * std_dev2) );
 
 	fpair = (delta_r/std_dev2) * vdW;
 
@@ -247,7 +248,7 @@ double PairVDWAttract::single(int /*i*/, int /*j*/, int itype, int jtype, double
   delta_r     = r - R[itype][jtype]; 
   std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
 
-  vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/ (2 * std_dev2 ));
+  vdW = -amp[itype][jtype] * exp(-(delta_r * delta_r)/ 2 * std_dev2 );
   fpair = (delta_r/std_dev2) * vdW;
 
   fforce = factor_lj * fpair/r;
