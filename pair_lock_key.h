@@ -21,96 +21,39 @@ PairStyle(lock/key,PairLockKey)
 #ifndef LMP_PAIR_LOCK_KEY_H
 #define LMP_PAIR_LOCK_KEY_H
 
-#include <map>
-#include <vector>
-#include <unordered_map>
 #include "pair.h"
-
-#include "fix_rot_brownian.h"
 
 namespace LAMMPS_NS {
 
-
-enum TableState {
-    NONE,
-    PROTEIN,
-    SITE,
-    INTERACTING_SITES,
-    SITE_COORDS
-//    INTERACTING_PARTICLES
-};
-
-struct Protein {
-    std::string lammpsType;
-    std::string fragName;
-    std::string uniProtID;
-    double radius;
-    double mass;
-};
-
-struct Site {
-    std::string protID;
-    std::string siteID;
-    std::vector<double> coords;
-};
-
-struct InteractingSites {
-    std::string  intID;
-    std::vector<double> lockKeyPrm;
-};
-
-// Define a struct to hold the coordinates
-struct Coords {
-    double x;
-    double y;
-    double z;
-};
-
 class PairLockKey : public Pair {
-  public:
+ public:
   PairLockKey(class LAMMPS *);
-  ~PairLockKey();
+  ~PairLockKey() override;
 
   void compute(int, int) override;
   void settings(int, char **) override;
   void coeff(int, char **) override;
   double init_one(int, int) override;
 //  virtual void init_style() override;
-  void loadLookupTables(const std::string &);
 
   void write_restart(FILE *) override;
-  void write_restart_settings(FILE *);
   void read_restart(FILE *) override;
-  void rotateVectorByQuaternion(const double *vec, const double *quat, double *result);
-  void readSiteCoords();
-  void updateSiteCoordsFile();
+  void write_restart_settings(FILE *) override;
+  void read_restart_settings(FILE *) override;
+  void write_data(FILE *) override;
+  void write_data_all(FILE *) override;
 
   double single(int, int, int, int, double, double, double, double &) override;
+  void *extract(const char *, int &) override;
 
 //  double** getTorque() {
 //    return torque;
 //  }
 
-  private:
-
-  std::map<std::string, Protein> proteinTable;
-  std::map<std::string, std::vector<Site>> siteTable;
-  std::map<std::string, InteractingSites> interactingSitesTable;
-  std::unordered_map<std::string, Coords> siteCoordsMap; 
-
-  std::ofstream siteCoordsFile;  // File stream for writing site coordinates
-  bool isSiteCoordsFileOpen = false;  // Flag to check if the file is open
-  bool writeSiteCoords;
-
-//  std::map<std::string, InteractingParticles> interactingParticlesTable;
-
-  FixRotBrownian *fixRotBrownian;  // Pointer to FixRotBrownian object
-
-
  protected:
-
   double cut_global;
-  double **cut; // **torque;
+  double **amp, **std_dev, **cut; // **torque;
+  double **offset;
 
   virtual void allocate();
 };
