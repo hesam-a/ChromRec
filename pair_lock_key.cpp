@@ -45,6 +45,10 @@ PairLockKey::PairLockKey(LAMMPS *lmp) : Pair(lmp), cut(nullptr), offset(nullptr)
 
 PairLockKey::~PairLockKey()
 {
+  // If the pair style is the KOKKOS variant, skip freeing these arrays
+#ifdef LMP_KOKKOS
+  // no frees, because the derived KOKKOS class will do it
+#else
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);
@@ -53,6 +57,7 @@ PairLockKey::~PairLockKey()
     memory->destroy(amp);
     memory->destroy(std_dev);
   }
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -246,6 +251,14 @@ double PairLockKey::single(int /*i*/, int /*j*/, int itype, int jtype, double rs
   fforce = factor_lj * fpair/r;
   return factor_lj * (lock - offset[itype][jtype]);
 }
+
+void PairLockKey::init_style()
+{
+  // For a normal pairwise potential that supports half neighbor lists:
+  neighbor->add_request(this, NeighConst::REQ_DEFAULT);
+
+}
+
 
 //void PairLockKey::init_style()
 //{
