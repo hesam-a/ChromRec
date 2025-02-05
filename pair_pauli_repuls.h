@@ -34,7 +34,7 @@ class PairPauliRepuls : public Pair {
   void settings(int, char **) override;
   void coeff(int, char **) override;
   double init_one(int, int) override;
-//  virtual void init_style() override;
+  virtual void init_style() override;
 
   void write_restart(FILE *) override;
   void read_restart(FILE *) override;
