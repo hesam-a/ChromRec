@@ -22,6 +22,8 @@
 #include "fix.h"
 #include "force.h"
 #include "memory.h"
+#include "neighbor.h"
+#include "neigh_request.h"
 #include "neigh_list.h"
 
 #include <cmath>
@@ -43,6 +45,10 @@ PairGaussElec::PairGaussElec(LAMMPS *lmp) : Pair(lmp), cut(nullptr), offset(null
 
 PairGaussElec::~PairGaussElec()
 {
+// If the pair style is the KOKKOS variant, skip freeing these arrays
+#ifdef LMP_KOKKOS
+  // no frees, because the derived KOKKOS class will do it
+#else
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);
@@ -51,6 +57,7 @@ PairGaussElec::~PairGaussElec()
     memory->destroy(amp);
     memory->destroy(std_dev);
   }
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -75,10 +82,9 @@ void PairGaussElec::compute(int eflag, int vflag) {
   ilist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
-	
+
   // Loop over neighbors of my atoms
   for (ii = 0; ii < inum; ii++) {
-
     i = ilist[ii];
     xtmp = x[i][0];
     ytmp = x[i][1];
@@ -87,34 +93,24 @@ void PairGaussElec::compute(int eflag, int vflag) {
     jlist = firstneigh[i];
     jnum = numneigh[i];
 
-
-//std::cout << "Particle " << i << " has " << jnum << " neighbors" << std::endl;
-
     for (jj = 0; jj < jnum; jj++) {
 
       j = jlist[jj];
       j &= NEIGHMASK;
       factor_lj = special_lj[sbmask(j)];
 
-
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
       delz = ztmp - x[j][2];
       rsq = delx*delx + dely*dely + delz*delz;
       jtype = type[j];
-      //std::cout << "   cutsq: " << cutsq[itype][jtype] << "rsq: " << rsq << '\n';
-      //std::cout << "Particle i: " << i << " (type " << itype << ") interacting with Particle j: " << j << " (type " << jtype << ")\n";
+      //std::cout << "cutsq: " << cutsq[itype][jtype] << "rsq: " << rsq << '\n';
 
       if (rsq < cutsq[itype][jtype]) {
-        //std::cout << "\nInside GAUSS/ELEC\n   Particle i: type " << itype << ", global index " << atom->tag[i] 
-        //      << ")      Particle j: type: " << jtype << ", global index " << atom->tag[j] << ")\n";
+        //std::cout << " GAUSS: if loop was entered\n";	
 
         r = sqrt(rsq);
         std_dev2 = std_dev[itype][jtype] * std_dev[itype][jtype];
-        //std::cout << " r: " << r << '\n';
-        //std::cout << " expoential : " << exp(-(r * r)/(2 * std_dev2)) << '\n';
-        //std::cout << " amp: " << amp[itype][jtype] << '\n';
-	
 
         gauss  = amp[itype][jtype] * exp(-(r * r)/(2 * std_dev2) );
         fpair = (r/std_dev2) * gauss;
@@ -206,8 +202,8 @@ void PairGaussElec::coeff(int narg, char **arg)
     for (int j = MAX(jlo, i); j <= jhi; j++) {
       if ((amp_i < 0 && amp_j > 0) || (amp_i > 0 && amp_j < 0)) {
         amp[i][j] = -1;
-      }
-      amp[i][j] *= sqrt(std::abs(amp_i) * std::abs(amp_j));    // Using geometric mean for mixing	    
+      }	    
+      amp[i][j] *= sqrt(std::abs(amp_i) * std::abs(amp_j));    // Using geometric mean for mixing           
       std_dev[i][j] = 0.5 * (std_dev_i + std_dev_j);  // Using arithmetic mean for mixing
       cut[i][j] = cut_one;
       setflag[i][j] = 1;
@@ -259,6 +255,13 @@ double PairGaussElec::single(int /*i*/, int /*j*/, int itype, int jtype, double 
 
   fforce = factor_lj * fpair/r;
   return factor_lj * (gauss - offset[itype][jtype]);
+}
+
+void PairGaussElec::init_style()
+{
+  // For a normal pairwise potential that supports half neighbor lists:
+  neighbor->add_request(this, NeighConst::REQ_DEFAULT);
+
 }
 
 /* ----------------------------------------------------------------------
