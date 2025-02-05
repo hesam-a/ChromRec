@@ -22,7 +22,10 @@
 #include "fix.h"
 #include "force.h"
 #include "memory.h"
+#include "neighbor.h"
+#include "neigh_request.h"
 #include "neigh_list.h"
+
 
 #include <cmath>
 #include <cstring>
@@ -43,6 +46,11 @@ PairVDWAttract::PairVDWAttract(LAMMPS *lmp) : Pair(lmp), cut(nullptr), offset(nu
 
 PairVDWAttract::~PairVDWAttract()
 {
+  // If the pair style is the KOKKOS variant, skip freeing these arrays
+#ifdef LMP_KOKKOS
+  // no frees, because the derived KOKKOS class will do it
+#else
+
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);
@@ -52,6 +60,7 @@ PairVDWAttract::~PairVDWAttract()
     memory->destroy(amp);
     memory->destroy(std_dev);
   }
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -253,6 +262,13 @@ double PairVDWAttract::single(int /*i*/, int /*j*/, int itype, int jtype, double
 
   fforce = factor_lj * fpair/r;
   return factor_lj * (vdW - offset[itype][jtype]);
+}
+
+void PairVDWAttract::init_style()
+{
+  // For a normal pairwise potential that supports half neighbor lists:
+  neighbor->add_request(this, NeighConst::REQ_DEFAULT);
+
 }
 
 /* ----------------------------------------------------------------------
