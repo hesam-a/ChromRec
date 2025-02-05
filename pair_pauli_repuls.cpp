@@ -1,3 +1,18 @@
+/* ----------------------------------------------------------------------
+   LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
+   https://www.lammps.org/, Sandia National Laboratories
+   LAMMPS development team: developers@lammps.org
+
+   Copyright (2003) Sandia Corporation.  Under the terms of Contract
+   DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+   certain rights in this software.  This software is distributed under
+   the GNU General Public License.
+
+   See the README file in the top-level LAMMPS directory.
+------------------------------------------------------------------------- */
+
+// Contributing author: Hesam Arabzadeh, University of Missouri, hacr6@missouri.edu
+ 
 #include "pair_pauli_repuls.h"
 
 #include "atom.h"
@@ -7,6 +22,8 @@
 #include "force.h"
 #include "memory.h"
 #include "neigh_list.h"
+#include "neighbor.h"
+#include "neigh_request.h"
 
 #include <cmath>
 #include <cstring>
@@ -26,6 +43,10 @@ PairPauliRepuls::PairPauliRepuls(LAMMPS *lmp) : Pair(lmp), cut(nullptr), offset(
 
 PairPauliRepuls::~PairPauliRepuls()
 {
+  // If the pair style is the KOKKOS variant, skip freeing these arrays
+#ifdef LMP_KOKKOS
+  // no frees, because the derived KOKKOS class will do it
+#else
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(cutsq);
@@ -36,6 +57,7 @@ PairPauliRepuls::~PairPauliRepuls()
     memory->destroy(amp);
     memory->destroy(decay_const);
   }
+#endif  
 }
 
 /* ---------------------------------------------------------------------- */
@@ -156,24 +178,14 @@ void PairPauliRepuls::settings(int narg, char **arg)
 
 void PairPauliRepuls::coeff(int narg, char **arg)
 {
-  if (narg != 10) error->all(FLERR, "Incorrect args for pair coefficients");
+  if (narg < 3 || narg > 10) error->all(FLERR, "Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo, ihi, jlo, jhi;
   utils::bounds(FLERR, arg[0], 1, atom->ntypes, ilo, ihi, error);
   utils::bounds(FLERR, arg[1], 1, atom->ntypes, jlo, jhi, error);
 
-  // Check if the 'none' keyword is used
-  if (strcmp(arg[2], "none") == 0) {
-    for (int i = ilo; i <= ihi; i++) {
-      for (int j = MAX(jlo, i); j <= jhi; j++) {
-        setflag[i][j] = 0; // Mark this pair as not set
-      }
-    }
-    return; // Exit the function
-  }  
-
-  double overlap = utils::numeric(FLERR, arg[2], false, lmp);
+  double overlapVal = utils::numeric(FLERR, arg[2], false, lmp);
   double R_i     = utils::numeric(FLERR, arg[3], false, lmp);
   double amp_i   = utils::numeric(FLERR, arg[4], false, lmp);
   double decay_const_i = utils::numeric(FLERR, arg[5], false, lmp);
@@ -185,12 +197,14 @@ void PairPauliRepuls::coeff(int narg, char **arg)
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo, i); j <= jhi; j++) {
+      //overlap[i][j] = overlapVal;    
       R[i][j] = (R_i + R_j);        // Using arithmetic mean for mixing
       amp[i][j] = sqrt(amp_i * amp_j);    // Using geometric mean for mixing
       decay_const[i][j] = 0.5 * (decay_const_i + decay_const_j);  // Using arithmetic mean for mixing
       cut[i][j] = cut_one;
       setflag[i][j] = 1;
       count++;
+      //printf(" overlap=%g, R=%g, amp=%g, decay_const=%g, cut=%g, setflag=%d \n",overlap[i][j], R[i][j], amp[i][j], decay_const[i][j], cut[i][j], setflag[i][j]);
     }
   }
 
@@ -236,6 +250,13 @@ double PairPauliRepuls::single(int /*i*/, int /*j*/, int itype, int jtype, doubl
 
   fforce = factor_lj * fpair/r;
   return factor_lj * (pauli - offset[itype][jtype]);
+}
+
+void PairPauliRepuls::init_style()
+{
+  // For a normal pairwise potential that supports half neighbor lists:
+  neighbor->add_request(this, NeighConst::REQ_DEFAULT);
+
 }
 
 /* ----------------------------------------------------------------------
