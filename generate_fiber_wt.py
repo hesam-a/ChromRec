@@ -830,7 +830,7 @@ atom_comment = [" #  H3 ",   " #  H4  ",  " #  H2A",   " #  H2B",   " #  H3",   
 
 
 # Parameters
-loop_nucs = 500
+loop_nucs = 1000
 nlinking_nucs = 10 
 total_nucs = 1000
 step_size = 120.
@@ -838,7 +838,7 @@ radial_distance = 100
 high_acetylation=0.8
 low_acetylation=0.05
 occupancy_percentage = 0.4
-acetylate = True
+acetylate = False
 kd_tree=None
 start_point=None
 atom_idx_start=1
@@ -865,9 +865,9 @@ print(f" xmin + margin: {xmin + margin}\n xmax - margin: {xmax - margin}")
 #
 #print(f"center_of_mass of nuc: {np.mean(nuc, axis=0)}")
 
-#chain = generate_chromatin_with_loops(nuc, total_nucs, loop_nucs, nlinking_nucs, step_size, radial_distance, 
-#                              occupancy_percentage, high_acetylation, low_acetylation, kd_tree, atom_comment, 
-#                              original_bonds, original_angles, linker_DNA_bonds, linker_DNA_angles)
+chain = generate_chromatin_with_loops(nuc, total_nucs, loop_nucs, nlinking_nucs, step_size, radial_distance, 
+                              occupancy_percentage, high_acetylation, low_acetylation, kd_tree, atom_comment, 
+                              original_bonds, original_angles, linker_DNA_bonds, linker_DNA_angles)
 
 #generate_full_nucleosome_chain(nuc, total_nucs, step_size, radial_distance, acetylation_ratio,
 #                               occupancy_percentage, acetylate, kd_tree, start_point,
